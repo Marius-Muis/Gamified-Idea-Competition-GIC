@@ -1,0 +1,318 @@
+/* 
+    Created on : 18 Jan 2019, 1:09:17 PM
+    Author     : Marius Smit
+*/
+
+
+/* shared styling BEGIN*/
+body{
+    background-color: #3299ff;
+}
+.loading_lobby{
+	width: -webkit-fill-available;
+	height: -webkit-fill-available;
+	background-image: linear-gradient(white, #3299ff)
+}
+
+fieldset{
+    background-color: #3299ff;
+    width: 60%;
+    height: auto;
+    margin-left: 16%;
+    margin-top: 2%;
+    /*font-family: arial narrow , sans-serif;*/
+    font-family: Tahoma, Geneva, sans-serif;
+}
+legend{
+    text-align: center;
+    padding-left: 3%;
+    padding-right: 3%;
+    background-image: url("/resources/label_background.png");
+    background-size: cover;
+}
+input{
+    width: 40%;
+    height: 20px;
+}
+.fieldset_elements{
+    list-style: none;
+}
+label:not(#toggle-menu):not(#progress_label):not(.drop-icon):not(#timecounter_label):not(.counter_labels){
+    display: inline-block;
+    width: 40%;
+    margin-top: 5%;
+    margin-right: 2%;
+    text-align: right;
+}
+
+.form_buttons{
+    margin-left: 28%;
+    margin-top: 5%;
+    text-align: center;
+    height: 30px;
+}
+/* shared styling END*/
+
+
+/* index.html BEGIN */
+#main_passform label[for="edtAccessKey"]{
+    display: block;
+    text-align: center;
+    width: 40%;
+    height: 25px;
+    margin-top: 3%;
+    margin-bottom: 2%;
+    margin-left: 30%;
+    margin-right: auto;
+    padding-top: 0.5%;
+    
+    background-image: url("/resources/label_background.png");
+    background-size: cover;
+    
+}
+#main_passform input[name="edtAccessKey"]{
+    margin-left: 30%;
+}
+#main_passform input[name="btnAccessKeySubmit"]{
+    margin-left: 30%;
+}
+/* index.html END */
+
+
+/* login.html BEGIN*/
+#main_login label{
+    
+}
+#main_login .login_inputs{
+    
+}
+/*#main_login input[name="btnCreateAccount"]{
+    margin-top: 0%;
+}*/
+/* login.html END*/
+
+
+/* create_account.html BEGIN*/
+#create_account h3{
+    font-weight: lighter;
+    font-size: 1em;
+    padding-right: 7%;
+    text-align: center;
+}
+/* create_account.html END*/
+
+/* hubs shared styling BEGIN */
+#hub_wrapper{
+	height: auto;
+	width: 100%;
+	font-size: 1em;
+	font-family: Tahoma, Geneva, sans-serif;
+}
+.hub_header{
+	height: 10%;
+	width: 100%;
+	background-color: gray;
+	color: white;
+}
+.hub_footer{
+	position: fixed;
+	height: 10%;
+	margin-bottom: 100px;
+	background-color: gray;
+	width: 100%;
+}
+#sec_messages{
+	display: block;
+	height: 70%;
+	width: 100%;
+	background-color: white;
+}
+#messages_list{
+	list-style: none;
+}
+.question{
+	float: left;
+	height: auto;
+	width: 50%;
+	display: block;
+	padding: 5px;
+	border: 0.5px solid #ccc;
+	border-radius: 10px;
+	margin-bottom: 1%;
+}
+.my_message_listitems{
+	float: left;
+	height: auto;
+	width: 50%;
+	display: block;
+	padding: 5px;
+	border: 0.5px solid #ccc;
+	border-radius: 10px;
+	margin-bottom: 1%;
+	background-color: #ddd;
+}
+.other_message_listitems{
+	float: right;
+	height: auto;
+	width: 50%;
+	display: block;
+	padding: 5px;
+	border: 0.5px solid #dedede;
+	border-radius: 10px;
+	margin-bottom: 1%;
+	background-color: #f1f1f1;
+}
+.tagged_my_message_listitems{
+	float: left;
+	background-color: #76d176;
+	height: auto;
+	width: 50%;
+	display: block;
+	padding: 5px;
+	border: 0.5px solid #ccc;
+	border-radius: 10px;
+	margin-bottom: 1%;
+}
+.tagged_other_message_listitems{
+	float: right;
+	background-color: #29CE29;
+	height: auto;
+	width: 50%;
+	display: block;
+	padding: 5px;
+	border: 0.5px solid #dedede;
+	border-radius: 10px;
+	margin-bottom: 1%;
+}
+.liked_tagged_other_message_listitems{
+	float: right;
+	background-color: #29CE29;
+	height: auto;
+	width: 50%;
+	display: block;
+	padding: 5px;
+	border: 0.5px solid #dedede;
+	border-radius: 10px;
+	margin-bottom: 1%;
+}
+.messages{
+	float: left;
+	height: auto;
+	width: 50%;
+	display: block;
+	padding: 5px;
+	border: 0.5px solid #dedede;
+	border-radius: 10px;
+	margin-bottom: 1%;
+	background-color: #f1f1f1;
+}
+.tagged_messages{
+	float: left;
+	background-color: #76d176;
+	height: auto;
+	width: 50%;
+	display: block;
+	padding: 5px;
+	border: 0.5px solid #dedede;
+	border-radius: 10px;
+	margin-bottom: 1%;
+}
+#progress_label{
+	display: inline;
+    width: 40%;
+    margin-top: 5%;
+    margin-right: 2%;
+    text-align: right;
+}
+#timecounter_label{
+	display: inline;
+	margin-left: 3%;
+}
+#input_timer{
+	display: inline;
+	width: 80px;
+	margin-top: 1%;
+	background-color: transparent;
+	outline: none;
+	border: none;
+	color: white;
+}
+#messagebox{
+	display: inline;
+	height: 30px;
+	width: 60%;
+	margin-top: 1%;
+	margin-left: 1%;
+}
+#hub_participant_submit{
+	height: 30px;
+	width: 100px;
+	font-size: 80%;
+	border: 1px solid black;
+	border-radius: 15px;
+	cursor: pointer;
+}
+#timechange_label{
+	margin-right: 3%;
+	display: inline-block;
+}
+#input_timechange{
+	display: inline;
+}
+#timechange_button{
+	margin-top: 2%;
+	margin-left: 25%;
+	cursor: pointer;
+}
+/* hubs shared styling END */
+
+/* lobby BEGIN */
+#counters_list{
+	float: right;
+	width: 40%;
+}
+#counters_list li{
+	margin-top: 1em;
+}
+.counter_labels{
+	display: inline;
+}
+.counters{
+	width: 25px;
+	height: 25px;
+	float: right;
+	display: block;
+}
+.borderless_fieldset{
+	border: none;
+	background-color: transparent;
+	text-align: center;
+}
+#loading_lobby_caption{
+	font-size: 2em;
+	font-weight: bold;
+	margin-bottom: 2em;
+	border-bottom: 1px solid black;
+}
+#loading_image{
+	width: 25%;
+}
+#inner_list_groups{
+	display: inline;
+}
+.loading_lobby span{
+	width: -webkit-fill-available;
+    font-size: 1.5em;
+    border-bottom: 1px solid black;
+    float: left;
+    text-align: left;
+}
+#highscores{
+	margin-top: 3em;
+	list-style: decimal;
+}
+.highscore_listitem{
+	display: block;
+	list-style: none;
+}
+/* lobby END */

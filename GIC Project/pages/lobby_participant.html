@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <title>Lobby</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="../styling/styling.css" />
+    </head>
+    <body class="loading_lobby">
+        <form action="" name="form_participant">
+            <fieldset class="borderless_fieldset">
+                <ul class="fieldset_elements">
+					<li id="loading_lobby_caption">Lobby</li>
+                    <li>
+						<image src="../resources/loading.gif" id="loading_image">
+					</li>
+					<li>Waiting for admin...</li>
+                </ul>
+				<span>Highscores:</span>
+				<ol id="highscores">
+				</ol>
+            </fieldset>
+        </form>
+    </body>
+	<script language="JavaScript">
+			var urlParams = new URLSearchParams(window.location.search);
+            alias = urlParams.get('alias');
+			
+			function formLoaded () {
+				var participants = [urlParams.get('part1'), urlParams.get('part2'), urlParams.get('part3'), urlParams.get('part4'), urlParams.get('part5'), urlParams.get('part6'), urlParams.get('part7'), urlParams.get('part8'), urlParams.get('part9'), urlParams.get('part10')];
+				var points = [urlParams.get('point1'), urlParams.get('point2'), urlParams.get('point3'), urlParams.get('point4'), urlParams.get('point5'), urlParams.get('point6'), urlParams.get('point7'), urlParams.get('point8'), urlParams.get('point9'), urlParams.get('point10')];
+				var index = 0;
+				var stop = false;
+				while (!stop){
+					if (participants[index] == "REmptY"){
+						stop = true;
+					}else{
+						var newElement = document.createElement('li');
+						newElement.setAttribute('class','highscore_listitem');
+						document.getElementById('highscores').appendChild(newElement);
+						newElement.innerHTML = `${participants[index]}:\t${points[index]}`;
+						index++;
+					}
+				}
+				
+				var lock = false;
+				var xhttp = new XMLHttpRequest();
+				setInterval(function () {
+					if (!lock){
+						lock = true;
+						var url = `/scripts/eventchange_groups.php?alias=${alias}`;
+						xhttp.open("GET", url, true);
+						xhttp.send();
+					}
+				}, 1000);
+				xhttp.onreadystatechange = function () {
+					if (this.readyState == 4 && this.status == 200) {
+						if (this.responseText != null && this.responseText != "") {
+							if (this.responseText == 'redirect'){
+								window.location.href = "http://www.ideosign.co.za/default.html";
+							}else{
+								window.location.href = this.responseText;
+							}
+						}
+					}else{
+						lock = false;
+					}
+				};
+			}
+        </script>
+</html>

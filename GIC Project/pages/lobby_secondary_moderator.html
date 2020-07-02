@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <title>Moderator Lobby</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="../styling/styling.css" />
+        <script language="JavaScript">
+		var urlParams = new URLSearchParams(window.location.search);
+		alias = urlParams.get('alias');
+		var url = `/scripts/eventchange_groups.php?alias=${alias}`;
+        var lock = false;
+		var xhttp = new XMLHttpRequest();
+		setInterval(function () {
+			if (!lock){
+				lock = true;
+				xhttp.open("GET", url, true);
+				xhttp.send();
+			}
+		}, 1000);
+		xhttp.onreadystatechange = function () {
+			if (this.readyState == 4 && this.status == 200) {
+				if (this.responseText != null && this.responseText != "") {
+					if (this.responseText == 'redirect'){
+						window.location.href = "http://www.ideosign.co.za/default.html";
+					}else{
+						window.location.href = this.responseText;
+					}
+				}
+			}else{
+				lock = false;
+			}
+		};
+        </script>
+    </head>
+    <body class="loading_lobby">
+        <form action="" name="form_secondary_moderator">
+            <fieldset class="borderless_fieldset">
+                <ul class="fieldset_elements">
+					<li id="loading_lobby_caption">Lobby</li>
+                    <li>
+						<image src="../resources/loading.gif" id="loading_image">
+					</li>
+					<li>Waiting for admin...</li>
+                </ul>
+				<span>Highscores:</span>
+				<ol id="highscores">
+				</ol>
+            </fieldset>
+        </form>
+    </body>
+</html>

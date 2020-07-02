@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <title>Create a New Account</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="/styling/styling.css"/>
+        <script language="JavaScript">
+		var url = window.location.href;
+		if (url.indexOf('?message=') != -1){
+			var urlParams = new URLSearchParams(window.location.search);
+			var message = urlParams.get('message');
+			alert(message);
+		}
+        function validate_form(){
+            if (document.getElementById("edtCreatePassword").value != document.getElementById("edtCreatePasswordConfirm").value){
+                alert("The passwords don't match!");
+                return false;
+            }else{
+                aliasString = document.getElementById('edtAlias').value;
+				if (aliasString.indexOf('|') != -1 || aliasString.indexOf('&') != -1 || aliasString.indexOf('$') != -1 || aliasString.indexOf(':') != -1 || aliasString.indexOf('_') != -1 || aliasString.toLowerCase().indexOf('empty') != -1){
+					alert("Your alias may not conatin '|', '&', '$', ':', '_' or literally the word 'empty'.");
+					return false;
+				}
+                nameString = document.getElementById('edtName').value;
+                surnameString = document.getElementById('edtSurname').value;
+				bNameIndex = aliasString.toLowerCase().indexOf(nameString.toLowerCase());
+				bSurnameIndex = aliasString.toLowerCase().indexOf(surnameString.toLowerCase());
+                //empty, |, &, $, :
+                if (bNameIndex != -1 || bSurnameIndex != -1){
+                    alert("Your alias may not contain your name or surname.");
+                    return false;
+                }else{
+                    return true;
+                }
+            }
+        }
+        </script>
+    </head>
+    <body>
+        <form action="/scripts/register.php" name="create_account_form" onsubmit="return validate_form()" method="POST">
+        <fieldset id="create_account" >
+            <legend>Fill in all fields and click "Submit" to finish</legend>
+            <ul class="fieldset_elements">
+                <li>
+                    <label class="create_account_labels" for="edtName" >Name:</label>
+                    <input type="text" name="edtName" id="edtName" value="" autofocus required />
+                </li>
+                <li>
+                    <label class="create_account_labels" for="edtSurname">Surname:</label>
+                    <input type="text" name="edtSurname" id="edtSurname" value="" required />
+                </li>
+                <li>
+                    <label class="create_account_labels" for="edtAlias">Alias/Handle*:</label>
+                    <input type="text" name="edtAlias" id="edtAlias" value="" required />
+                    <h3>* The name you will be identified with during the experiment. Should not contain your name and surname and should not be a nickname that people can associate you with. The experiment requires that its participants remain anonymous.</h3>
+                </li>
+                <li>
+                    <label class="create_account_labels" for="edtEmail">Email*:</label>
+                    <input type="email" name="edtEmail" id="edtEmail" value="" required />
+                    <h3>* Your contact details are secure. Your email is captured with the sole purpose of giving the moderators a method to communicate with participants if needed.</h3>
+                </li>
+                <li>
+                    <label class="create_account_labels" for="edtCreatePassword">Password:</label>
+                    <input type="password" name="edtCreatePassword" id="edtCreatePassword" value="" required />
+                </li>
+                <li>
+                    <label class="create_account_labels" for="edtCreatePasswordConfirm">Confirm Password:</label>
+                    <input type="password" name="edtCreatePasswordConfirm" id="edtCreatePasswordConfirm" value="" required />
+                </li>
+                <li>
+                    <input type="submit" value="Submit"  name="edtCreateSubmit" class="form_buttons" />
+                </li>
+                <li>
+                    <input type="button" value="Back to Login" name="edtLoginFromRegister" class="form_buttons" onclick="window.location.href = 'http://www.ideosign.co.za/default.html';"/>
+                </li>
+            </ul>
+        </fieldset>
+        </form>
+    </body>
+</html>

@@ -1,0 +1,405 @@
+<html>
+<head>
+    <title>Communication Hub</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="../styling/styling.css" />
+	<link rel="stylesheet" type="text/css" href="/styling/menustyling.css" />
+</head>
+<body>
+	<section id="hub_wrapper" onmouseenter="checkPointer(event);">
+<nav id="menu">
+  <label id="timecounter_label">Time left:</label>
+  <input id="input_timer" type="text" name="timecounter" value="">
+  <label for="tm" id="toggle-menu">Settings<span class="drop-icon">▾</span></label>
+  <input type="checkbox" id="tm">
+  <ul class="main-menu clearfix">
+    <li><a href="#">Kick Participants... 
+        <span class="drop-icon">▾</span>
+        <label title="Toggle Drop-down" class="drop-icon" for="sm1">▾</label>
+      </a>
+      <input type="checkbox" id="sm1">
+      <ul class="sub-menu" id="Participants_Submenu" onclick="removeAccount(event)">
+      </ul>
+    </li>
+  </ul>
+</nav>
+</nav>
+            <section id="sec_messages" style="overflow-y:auto;">
+                <ul id="messages_list" onclick="tagAdd(event)">
+				</ul>
+            </section>
+	</section>
+</body>
+</html>
+<script>
+    //VARS
+    var urlParams = new URLSearchParams(window.location.search);
+	var grouptype = urlParams.get('grouptype');
+    var alias = urlParams.get('alias');
+	var question = urlParams.get('question');
+	
+    var timeLimit = 0;
+    var timeThenPlusTimeLimit = 0;
+    var currentTime = 0;
+    var flagStart = false;
+    if (urlParams.get("messageid") == -1){
+		sessionStorage.setItem("lastid", -1);
+	}else{
+		if (sessionStorage.getItem("active") == false || sessionStorage.getItem("active") == null){
+			sessionStorage.setItem("lastid", urlParams.get('messageid'));
+			sessionStorage.setItem("active", true);
+		}else{
+			sessionStorage.setItem("lastid", -1);
+		}
+	}
+    //END VARS
+	
+	
+	//BEGIN QUESTION INIT
+		var list = document.getElementById('messages_list');
+		var newElementQuestion = document.createElement('li');
+		newElementQuestion.setAttribute('class', 'question');
+		list.appendChild(newElementQuestion);
+		newElementQuestion.innerHTML = `The question:\t${question}`;
+		var newElementGrouptype = document.createElement('li');
+		newElementGrouptype.setAttribute('class', 'question');
+		list.appendChild(newElementGrouptype);
+		newElementGrouptype.innerHTML = `Grouptype:\t${grouptype}`;
+		var colourval = 0;
+		var first = true;
+		var y = setInterval(function () {
+			if (first){
+				first = false;
+				newElementQuestion.style.backgroundColor = `rgb(255,255,0)`;
+				newElementGrouptype.style.backgroundColor = `rgb(255,255,0)`;
+				colourval++;
+			}else{
+				if (colourval > 256){
+					clearInterval(y);
+				}else{
+					newElementQuestion.style.backgroundColor = `rgb(255,255,${colourval})`;
+					newElementGrouptype.style.backgroundColor = `rgb(255,255,${colourval})`;
+					colourval++;
+				}
+			}
+		},3);
+	//END QUESTION INIT
+	
+	
+	//BEGIN SETTINGS MENU
+	for (var countparts = 0; countparts < 5; countparts++){
+		var indexparams = 'part' + (countparts + 1);
+		if (urlParams.get(indexparams).indexOf('empty') == -1){
+			var newElement = document.createElement('li');
+			document.getElementById('Participants_Submenu').appendChild(newElement);
+			var newElementLink = document.createElement('a');
+			newElementLink.setAttribute('id', urlParams.get(indexparams));
+			newElement.appendChild(newElementLink);
+			newElementLink.innerHTML = urlParams.get(indexparams);
+		}else{
+			break;
+		}
+	}
+	//END SETTINGS MENU
+
+
+    //EVENTSOURCE INSTANTIATIONS
+	var lockxhttp = false;
+    var evxhttp = new XMLHttpRequest();
+    setInterval(function () {
+		if (!lockxhttp){
+			lockxhttp = true;
+			var url = `/scripts/hub_updatesyncfile.php?alias=${alias}&messageid=${sessionStorage.getItem("lastid")}`;
+			evxhttp.open("GET", url, true);
+			evxhttp.send();
+		}
+    }, 1000);
+		evxhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                if (this.responseText != null && this.responseText != "" && this.responseText != '&') {
+					var arrResponses = this.responseText.split('&');
+					var lengtharr = arrResponses.length;
+					for (var i = 0; i < lengtharr; i++){
+						var paramArgs = arrResponses[i].split("|");
+						sessionStorage.setItem("lastid", paramArgs[0]);
+						url = `/scripts/hub_updatesyncfile.php?alias=${alias}&messageid=${sessionStorage.getItem("lastid")}`;
+						switch (paramArgs[2]) {
+							case "pmessage":
+								pmessage(paramArgs);
+								break;
+							case "time":
+								time(paramArgs);
+								break;
+							case "tag":
+								tag(paramArgs);
+								break;
+							case "like":
+								like(paramArgs);
+								break;
+							case "untag":
+								untag(paramArgs);
+								break;
+							case "kick":
+								kick(paramArgs);
+								break;
+						}
+					}
+                }
+				lockxhttp = false;
+            }
+        };
+    //END EVENTSOURCE INSTANTIATIONS
+
+
+    //EVENTSOURCES
+    function pmessage(args) {
+        //var line = args[2];
+		var line = args[3];
+        //var indexOne = line.indexOf('|');
+        //var messageID = line.substring(0, indexOne);
+		var messageID = args[1];
+        var indexTwo = line.indexOf(':');
+        //var falias = line.substring(indexOne + 1, indexTwo);
+		var falias = line.substring(0, indexTwo);
+        var message = line.substring(indexTwo + 1, line.length);
+
+        var list = document.getElementById('messages_list');
+        var newElement = document.createElement('li');
+        newElement.setAttribute('id', messageID);
+		newElement.setAttribute('class', 'messages');
+        list.appendChild(newElement);
+        newElement.innerHTML = falias + ":\t" + message;
+    }
+
+    function tag(args) {
+        //var messageID = args[2];
+		var messageID = args[1];
+        const li = document.getElementById(messageID);
+		li.setAttribute('class','tagged_messages');
+		if (grouptype == "pseudonyms_feedback" || grouptype == "anonymous_feedback"){
+			var message = li.innerHTML;
+			li.innerHTML = message + "&nbsp&nbsp 0 Likes";
+		}
+    }
+
+    function like(args) {
+        //var messageID = args[2];
+		var messageID = args[1];
+        var message = document.getElementById(messageID).innerHTML;
+        var index = message.indexOf("Likes");
+        var currentLikes = parseInt(message.charAt(index - 2), 10);
+        var newLikes = currentLikes + 1;
+        var newmessage = message.substring(0, index - 2) + newLikes + " Likes";
+        document.getElementById(messageID).innerHTML = newmessage;
+    }
+
+    function time(args) {
+        var arrDate = new Array();
+        //var line = args[2];
+		var line = args[3];
+        var indexSemiColon = line.indexOf(';');
+        var offsetChange = line.substring(0, indexSemiColon);    // measured in minutes/ string containing "END"
+        var timeThen = line.substring(indexSemiColon + 1, line.length);
+        if (offsetChange.toString().toLowerCase() != "end") {
+			var arrTime = timeThen.split(/[- :]/);
+            var timeThenDate = new Date(arrTime[0],arrTime[1],arrTime[2],arrTime[3],arrTime[4],arrTime[5]);
+			var timeoutput = offsetChange;
+			offsetChange = parseInt(offsetChange, 10) * 60 * 1000;
+            currentTime = timeThenDate.getTime();
+            if (!flagStart) {
+				if (offsetChange < 0){
+					timeThenPlusTimeLimit = currentTime + (offsetChange + (Date.now() - currentTime));
+				}else{
+					timeThenPlusTimeLimit = currentTime + (offsetChange - (Date.now() - currentTime));
+				}
+                flagStart = true;
+				timestring = `Timelimit:\t${timeoutput} minutes`;
+            } else {
+				if (offsetChange < 0){
+					timeThenPlusTimeLimit += offsetChange + (Date.now() - currentTime);
+					timeoutput = timeoutput * -1;
+					timestring = `${timeoutput} minutes subtracted from timelimit!`;
+				}else{
+					timeThenPlusTimeLimit += offsetChange - (Date.now() - currentTime);
+					timestring = `${timeoutput} minutes added to timelimit!`;
+				}
+            }
+			var list = document.getElementById('messages_list');
+			var newElementTime = document.createElement('li');
+			newElementTime.setAttribute('class', 'question');
+			list.appendChild(newElementTime);
+			newElementTime.innerHTML = timestring;
+			var elementtimecolourval = 0;
+			var elementtimefirst = true;
+			var z = setInterval(function () {
+				if (elementtimefirst){
+					elementtimefirst = false;
+					newElementTime.style.backgroundColor = `rgb(255,255,0)`;
+					elementtimecolourval++;
+				}else{
+					if (elementtimecolourval > 256){
+						clearInterval(z);
+					}else{
+						newElementTime.style.backgroundColor = `rgb(255,255,${elementtimecolourval})`;
+						elementtimecolourval++;
+					}
+				}
+			}, 3);
+        }
+        else {
+            redirect();
+        }
+    }
+	
+	function untag(args){
+		//var fmessageid = args[2];
+		var fmessageid = args[1];
+		var le = document.getElementById(fmessageid);
+		if (le.className == 'tagged_messages'){
+			le.setAttribute('class','messages');
+			if (grouptype == "pseudonyms_feedback" || grouptype == "anonymous_feedback"){
+				var index = le.innerHTML.indexOf("Likes");
+				var message = le.innerHTML.substring(0, index - 2);
+				le.innerHTML = message;
+			}
+		}
+	}
+	
+	function kick(args){
+		var kickalias = args[3];
+		var list = document.getElementById('messages_list');
+		var newElementTime = document.createElement('li');
+		newElementTime.setAttribute('class', 'question');
+		list.appendChild(newElementTime);
+		newElementTime.innerHTML = `${kickalias} has been kicked from the chat`;
+		var elementkickcolourval = 0;
+		var elementkickfirst = true;
+		var q = setInterval(function () {
+			if (elementkickfirst){
+				elementkickfirst = false;
+				newElementTime.style.backgroundColor = `rgb(255,255,0)`;
+				elementkickcolourval++;
+			}else{
+				if (elementkickcolourval > 256){
+					clearInterval(q);
+				}else{
+					newElementTime.style.backgroundColor = `rgb(255,255,${elementkickcolourval})`;
+					elementkickcolourval++;
+				}
+			}
+		}, 3);
+	}
+    //END EVENTSOURCES
+
+
+    //TRIGGERS
+	var locktagadd = false;
+	var tagaddxhttp = new XMLHttpRequest();
+    function tagAdd(e) {
+		if (!locktagadd){
+			locktagadd = true;
+			var targetid = e.target.id;
+			if (e.target.className == "messages"){
+				tagaddurl = `/scripts/hub_messagesend.php?alias=${alias}&type=tag&messageid=${targetid}`;
+			}else{
+				tagaddurl = `/scripts/hub_messagesend.php?alias=${alias}&type=untag&messageid=${targetid}`;
+			}
+			tagaddxhttp.open("GET", tagaddurl, true);
+			tagaddxhttp.send();
+			tagaddxhttp.onreadystatechange = function () {
+				if (this.readyState == 4 && this.status == 200) {
+					locktagadd = false;
+				}
+			}
+		}
+    }
+	
+	var lockremoveaccount = false;
+	var removeaccountxhttp = new XMLHttpRequest();
+	function removeAccount(e){
+		if (!lockremoveaccount){
+			lockremoveaccount = true;
+			var aliastokick = e.target.id;
+			removeaccounturl = `/scripts/hub_messagesend.php?alias=${alias}&type=kick&kickalias=${aliastokick}`;
+			removeaccountxhttp.open("GET", removeaccounturl, true);
+			removeaccountxhttp.send();
+			removeaccountxhttp.onreadystatechange = function () {
+				if (this.readyState == 4 && this.status == 200) {
+					lockremoveaccount = false;
+					var parentelem = document.getElementById(aliastokick);
+					parentelem.parentNode.removeChild(parentelem);
+				}
+			}
+		}
+	}
+
+    function redirect() {
+        clearInterval(x);
+		sessionStorage.setItem("active", false);
+        window.location = "default.html";
+    }
+	
+	function checkEnter (e){
+		if (e.which == 13 || e.keyCode == 13){
+			changeTime();
+			return false;
+		}else{
+			return true;
+		}
+	}
+    //END TRIGGERS
+
+
+	var firstIteration = true;
+    //TIMER
+    var x = setInterval(function () {
+		if (flagStart){
+			currentTime += 1000;
+			var distance = timeThenPlusTimeLimit - currentTime;
+			var instanceTime = new Date(distance);
+			var minutes = instanceTime.getMinutes();
+			var seconds = instanceTime.getSeconds();
+			if (seconds < 10){
+				document.getElementById('input_timer').value = minutes + ":0" + seconds;
+			}else{
+				document.getElementById('input_timer').value = minutes + ":" + seconds;
+			}
+			if (minutes == 0 && seconds == 0 && flagStart == true){
+				redirect();
+			}
+			if (firstIteration){
+				firstIteration = false;
+			}
+		}
+    }, 1000);
+    //END TIMER
+	
+	
+	//BEGIN STYLING FORMATS
+	function checkPointer(e){
+		if (locktagadd)
+			document.getElementById('hub_wrapper').style.cursor = 'wait';
+		else{
+			if (e.target.className)
+				var targetclass = e.target.className;
+			else
+				var targetclass = e.target.id;
+			switch (targetclass){
+				case ('messages'):
+					e.target.style.cursor = 'pointer';
+					break;
+				case ('tagged_messages'):
+					e.target.style.cursor = 'pointer';
+					break;
+				case ('timechange_button'):
+					e.target.style.cursor = 'pointer';
+					break;
+				default:
+					e.target.style.cursor = 'default';
+					break;
+			}
+		}
+	}
+	//END STYLING FORMATS
+</script>

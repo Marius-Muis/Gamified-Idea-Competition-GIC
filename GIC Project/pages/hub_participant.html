@@ -1,0 +1,424 @@
+﻿<html>
+<head>
+    <title>Communication Hub</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="../styling/styling.css" />
+</head>
+<body>
+	<section id="hub_wrapper" onmouseenter="checkPointer(event);">
+            <header class="hub_header" id="top_header">
+                <label id="timecounter_label">Time left:</label>
+                <input id="input_timer" type="text" name="timecounter" value="">
+            </header>
+            <section id="sec_messages" style="overflow-y:auto;">
+                <ul id="messages_list" onclick="likeAdd(event)">
+				</ul>
+            </section>
+            <footer class="hub_footer">
+                <input id="messagebox" type="text" name="edtMessage" value="type here..." required="" onfocus="if(this.value=='type here...') this.value='';" onkeypress="return checkEnter(event)" />
+                <input id="hub_participant_submit" type="button" value="SEND" name="btnSend" onClick="sendMessage()" />
+            </footer>
+	</section>
+</body>
+</html>
+<script>
+    //VARS
+    var urlParams = new URLSearchParams(window.location.search);
+    var alias = urlParams.get('alias');
+	var names = urlParams.get('names');
+	var grouptype = urlParams.get('grouptype');
+	var minscore = urlParams.get('minscore');
+	var question = urlParams.get('question');
+	
+    var timeLimit = 0;
+    var timeThenPlusTimeLimit = 0;
+    var currentTime = 0;
+    var flagStart = false;
+    var lastid = 0;
+	var score = 0;
+	var sentMessage = '';
+    //END VARS
+	
+	
+	//BEGIN QUESTION INIT
+		var list = document.getElementById('messages_list');
+		var newElementQuestion = document.createElement('li');
+		newElementQuestion.setAttribute('class', 'question');
+		list.appendChild(newElementQuestion);
+		newElementQuestion.innerHTML = `The question:\t${question}`;
+		var colourval = 0;
+		var first = true;
+		var y = setInterval(function () {
+			if (first){
+				first = false;
+				newElementQuestion.style.backgroundColor = `rgb(255,255,0)`;
+				colourval++;
+			}else{
+				if (colourval > 256){
+					clearInterval(y);
+				}else{
+					newElementQuestion.style.backgroundColor = `rgb(255,255,${colourval})`;
+					colourval++;
+				}
+			}
+		},3);
+	//END QUESTION INIT
+
+
+	//PROGRESS TRACKER
+	if (grouptype == "pseudonyms_feedback" || grouptype == "anonymous_feedback"){
+		if (minscore != 0){
+			var labelElement = document.createElement('label');
+			labelElement.setAttribute('id','progress_label');
+			document.getElementById("top_header").appendChild(labelElement);
+			updateProgress();
+		}
+	}
+	function updateProgress(){
+		if (minscore != 0){
+			document.getElementById("progress_label").innerHTML = "Points:\t" + score + " out of " + minscore;
+		}
+	}
+	//END PROGRESS TRACKER
+	
+
+    //EVENTSOURCE INSTANTIATIONS
+	var lockxhttp = false;
+    var evxhttp = new XMLHttpRequest();
+    setInterval(function () {
+		if (!lockxhttp){
+			lockxhttp = true;
+			var url = `/scripts/hub_readsyncfile.php?alias=${alias}&lastmessage=${lastid}`;
+			evxhttp.open("GET", url, true);
+			evxhttp.send();
+		}
+    }, 1000);
+		evxhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                if (this.responseText != null && this.responseText != "" && this.responseText != '&') {
+					var arrResponses = this.responseText.split("&");
+					var lengtharr = arrResponses.length;
+					for (var i = 0; i < lengtharr; i++){
+						var paramArgs = arrResponses[i].split("|");
+						lastid = paramArgs[0];
+						url = `/scripts/hub_readsyncfile.php?alias=${alias}&lastmessage=${lastid}`;
+						switch (paramArgs[2]) {
+							case "pmessage":
+								pmessage(paramArgs);
+								break;
+							case "time":
+								time(paramArgs);
+								break;
+							case "tag":
+								tag(paramArgs);
+								break;
+							case "like":
+								like(paramArgs);
+								break;
+							case "untag":
+								untag(paramArgs);
+								break;
+							case "kick":
+								kick(paramArgs);
+								break;
+						}
+					}
+                }
+				lockxhttp = false;
+            }
+        };
+    //END EVENTSOURCE INSTANTIATIONS
+
+
+    //EVENTSOURCES
+    function pmessage(args) {
+        var line = args[3];
+        //var indexOne = line.indexOf('|');
+        //var messageID = line.substring(0, indexOne);
+		var messageID = args[1];
+        var indexTwo = line.indexOf(':');
+        //var falias = line.substring(indexOne + 1, indexTwo);
+		var falias = line.substring(0, indexTwo);
+        //var message = line.substring(indexTwo + 1, line.length);
+		var message = line.substring(indexTwo +1, line.length);
+
+        var list = document.getElementById('messages_list');
+        var newElement = document.createElement('li');
+        newElement.setAttribute('id', messageID);
+        if (falias == names || falias == alias) {
+            newElement.setAttribute('class', "my_message_listitems");
+        } else {
+            newElement.setAttribute('class', "other_message_listitems");
+        }
+        list.appendChild(newElement);
+		newElement.innerHTML = falias + ":\t" + message;
+		if (sentMessage == newElement.innerHTML)
+			lock = false;
+    }
+
+    function tag(args) {
+		if (grouptype != "pseudonyms_none" && grouptype != "anonymous_none"){
+			//var messageID = args[2];
+			var messageID = args[1];
+			const li = document.getElementById(messageID);
+			var message = li.innerHTML;
+			li.innerHTML = message + "&nbsp&nbsp 0 Likes";
+			if (li.className == "my_message_listitems") {
+				score += 2;
+				updateProgress();
+				li.setAttribute('class', 'tagged_my_message_listitems');
+			} else {
+				li.setAttribute('class', 'tagged_other_message_listitems');
+			}
+		}
+    }
+
+    function like(args) {
+		if (grouptype != "pseudonyms_none" && grouptype != "anonymous_none"){
+			//var messageID = args[2];
+			var messageID = args[1];
+			if (document.getElementById(messageID).className == "tagged_my_message_listitems"){
+				score++;
+				updateProgress();
+			}
+			var message = document.getElementById(messageID).innerHTML;
+			var index = message.indexOf("Likes");
+			var currentLikes = parseInt(message.charAt(index - 2), 10);
+			var newLikes = currentLikes + 1;
+			var newmessage = message.substring(0, index - 2) + newLikes + " Likes";
+			document.getElementById(messageID).innerHTML = newmessage;
+		}
+    }
+
+    function time(args) {
+        var arrDate = new Array();
+        //var line = args[2];
+		var line = args[3];
+        var indexSemiColon = line.indexOf(';');
+        var offsetChange = line.substring(0, indexSemiColon);    // measured in minutes/ string containing "END"
+        var timeThen = line.substring(indexSemiColon + 1, line.length);
+        if (offsetChange.toString().toLowerCase() != "end") {
+			var arrTime = timeThen.split(/[- :]/);
+            var timeThenDate = new Date(arrTime[0],arrTime[1],arrTime[2],arrTime[3],arrTime[4],arrTime[5]);
+			var timeoutput = offsetChange;
+			offsetChange = parseInt(offsetChange, 10) * 60 * 1000;
+            currentTime = timeThenDate.getTime();
+            if (!flagStart) {
+				if (offsetChange < 0){
+					timeThenPlusTimeLimit = currentTime + (offsetChange + (Date.now() - currentTime));
+				}else{
+					timeThenPlusTimeLimit = currentTime + (offsetChange - (Date.now() - currentTime));
+				}
+                flagStart = true;
+				timestring = `Timelimit:\t${timeoutput} minutes`;
+            } else {
+				if (offsetChange < 0){
+					timeThenPlusTimeLimit += offsetChange + (Date.now() - currentTime);
+					timeoutput = timeoutput * -1;
+					timestring = `${timeoutput} minutes subtracted from timelimit!`;
+				}else{
+					timeThenPlusTimeLimit += offsetChange - (Date.now() - currentTime);
+					timestring = `${timeoutput} minutes added to timelimit!`;
+				}
+            }
+			var list = document.getElementById('messages_list');
+			var newElementTime = document.createElement('li');
+			newElementTime.setAttribute('class', 'question');
+			list.appendChild(newElementTime);
+			newElementTime.innerHTML = timestring;
+			var elementtimecolourval = 0;
+			var elementtimefirst = true;
+			var z = setInterval(function () {
+				if (elementtimefirst){
+					elementtimefirst = false;
+					newElementTime.style.backgroundColor = `rgb(255,255,0)`;
+					elementtimecolourval++;
+				}else{
+					if (elementtimecolourval > 256){
+						clearInterval(z);
+					}else{
+						newElementTime.style.backgroundColor = `rgb(255,255,${elementtimecolourval})`;
+						elementtimecolourval++;
+					}
+				}
+			}, 3);
+        }
+        else {
+            redirect();
+        }
+    }
+	
+	function untag(args){
+		if (grouptype == "pseudonyms_feedback" || grouptype == "anonymous_feedback"){
+			//var fmessageid = args[2];
+			var fmessageid = args[1];
+			var le = document.getElementById(fmessageid);
+			var index = le.innerHTML.indexOf("Likes");
+			var currentLikes = parseInt(le.innerHTML.charAt(index - 2), 10);
+			if (le.className.indexOf("tagged_other_message_listitems") != -1){
+				le.setAttribute('class','other_message_listitems');
+			}else{
+				le.setAttribute('class','my_message_listitems');
+				if (currentLikes == 0){
+					score = score - 2;
+				}else{
+					score = score - 2 - currentLikes;
+				}
+				updateProgress();
+			}
+			var message = le.innerHTML.substring(0, index - 2);
+			le.innerHTML = message;
+		}
+	}
+	
+	function kick(args){
+		var kickalias = args[3];
+		if (kickalias == alias || kickalias == names){
+		clearInterval(x);
+			window.location.href = 'http://www.ideosign.co.za?message=You+have+been+kicked+from+the+chat';
+		}else{
+			var list = document.getElementById('messages_list');
+			var newElementTime = document.createElement('li');
+			newElementTime.setAttribute('class', 'question');
+			list.appendChild(newElementTime);
+			newElementTime.innerHTML = `${kickalias} has been kicked from the chat`;
+			var elementkickcolourval = 0;
+			var elementkickfirst = true;
+			var q = setInterval(function () {
+				if (elementkickfirst){
+					elementkickfirst = false;
+					newElementTime.style.backgroundColor = `rgb(255,255,0)`;
+					elementkickcolourval++;
+				}else{
+					if (elementkickcolourval > 256){
+						clearInterval(q);
+					}else{
+						newElementTime.style.backgroundColor = `rgb(255,255,${elementkickcolourval})`;
+						elementkickcolourval++;
+					}
+				}
+			}, 3);
+		}
+	}
+    //END EVENTSOURCES
+
+
+    //TRIGGERS
+	var locksendmessage = false;
+	var sendmessagexhttp = new XMLHttpRequest();
+    function sendMessage() {
+		if (!locksendmessage){
+			var smessage = document.getElementById("messagebox").value;
+			if (smessage.indexOf(':') != -1 || smessage.indexOf('|') != -1 || smessage.indexOf('&') != -1){
+				alert("Message may not contain the colon (:), pipe (|) or ampersand (&) character.");
+			}else{
+				if (smessage != "" && smessage != null) {
+					locksendmessage = true;
+					sentMessage = alias + ":\t" + smessage;
+					document.getElementById("messagebox").value = "";
+					sendmessageurl = `/scripts/hub_messagesend.php?alias=${alias}&type=pmessage&message=${smessage}`
+					sendmessagexhttp.open("GET", sendmessageurl, true);
+					sendmessagexhttp.send();
+					sendmessagexhttp.onreadystatechange = function () {
+						if (this.readyState == 4 && this.status == 200) {
+							locksendmessage = false;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	var locklikeadd = false;
+	var likeaddxhttp = new XMLHttpRequest();
+    function likeAdd(e) {
+		if (!locklikeadd){
+			if (e.target.className == "tagged_other_message_listitems") {
+				locklikeadd = true;
+				e.target.setAttribute('class', 'liked_tagged_other_message_listitems');
+				var targetid = e.target.id;
+				likeaddurl = `/scripts/hub_messagesend.php?alias=${alias}&type=like&messageid=${targetid}`;
+				likeaddxhttp.open("GET", likeaddurl, true);
+				likeaddxhttp.send();
+				likeaddxhttp.onreadystatechange = function () {
+					if (this.readyState == 4 && this.status == 200) {
+						locklikeadd = false;
+					}
+				}
+			}
+		}
+    }
+
+    function redirect(message) {
+        clearInterval(x);
+		if (message == "ended"){
+			window.location = "default.html?message=Session+closed+by+admin";
+		}else{
+			window.location = "default.html";
+		}
+    }
+	
+	function checkEnter (e) {
+		if (e.which == 13 || e.keyCode == 13){
+			sendMessage();
+			return false;
+		}else{
+			return true;
+		}
+	}
+    //END TRIGGERS
+
+	
+	var firstIteration = true;
+    //TIMER
+    var x = setInterval(function () {
+		if (flagStart){
+			currentTime += 1000;
+			var distance = timeThenPlusTimeLimit - currentTime;
+			var instanceTime = new Date(distance);
+			var minutes = instanceTime.getMinutes();
+			var seconds = instanceTime.getSeconds();
+			if (seconds < 10){
+				document.getElementById('input_timer').value = minutes + ":0" + seconds;
+			}else{
+				document.getElementById('input_timer').value = minutes + ":" + seconds;
+			}
+			if (minutes == 0 && seconds == 0 && flagStart == true){
+				redirect("reached");
+			}
+			if (firstIteration){
+				firstIteration = false;
+			}
+		}
+    }, 1000);
+    //END TIMER
+	
+	
+	//BEGIN STYLING FORMATS
+	function checkPointer(e){
+		if (locksendmessage || locklikeadd)
+			document.getElementById('hub_wrapper').style.cursor = 'wait';
+		else{
+			if (e.target.className)
+				var targetclass = e.target.className;
+			else
+				var targetclass = e.target.id;
+			switch (targetclass){
+				case ('tagged_other_message_listitems'):
+					e.target.style.cursor = 'pointer';
+					break;
+				case ('hub_participant_submit'):
+					e.target.style.cursor = 'pointer';
+					break;
+				case ('messagebox'):
+					e.target.style.cursor = 'text';
+					break;
+				default:
+					e.target.style.cursor = 'default';
+					break;
+			}
+		}
+	}
+	//END STYLING FORMATS
+</script>

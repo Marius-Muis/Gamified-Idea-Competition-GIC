@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <title>Experiment Settings</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="../styling/styling.css" />
+		<link rel="stylesheet" type="text/css" href="../styling/menustyling.css" />
+    </head>
+    <body>
+	<section id="hub_wrapper">
+<nav id="menu">
+  <label for="tm" id="toggle-menu">Remove accounts from session
+  <span class="drop-icon">▾</span>
+  </label>
+  <input type="checkbox" id="tm">
+  <ul class="main-menu clearfix">
+    <li><a href="#">Participants 
+        <span class="drop-icon">▾</span>
+        <label title="Toggle Drop-down" class="drop-icon" for="sm1">▾</label>
+      </a>
+      <input type="checkbox" id="sm1">
+      <ul class="sub-menu" id="Participants_Submenu" onclick="removeAccount(event)">
+      </ul>
+    </li>
+  </ul>
+</nav>
+        <form name="lobby_main_moderator" action = actionString onsubmit="return checkValidation()">
+            <label>Moderators logged in:</label><input type="text" id="counter_mods" value="">
+            <label>Participants logged in:</label><input type="text" id="counter_parts" value="">
+            <fieldset>
+                <legend>Enter experiment settings</legend>
+                <ul class="fieldset_elements">
+                    <li>
+                        <label for="edtQuestion">Problem to solve:</label>
+                        <textarea id="edtQuestion" name="edtQuestion" rows="1" cols="20" value="" spellcheck="true" onkeypress="checkEnter(event);" required></textarea>
+                    </li>
+                    <li>
+                        <label for="edtTimeLimit">Time limit:</label>
+                        <input type="number" name="edtTimeLimit" id="edtTimeLimit" max="60" value="5" required />
+                    </li>
+                    <li>
+                        <label for="edtMinScore">Minimum score:</label>
+                        <input type="number" name="edtMinScore" id="edtMinScore" max="100" value="0" required />
+                    </li>
+					<li id = "outer_list_groups">
+						<input type="checkbox" id="chkCustomGroups"  onclick="addremoveGrouping(this)">
+						<label for = "chkCustomGroups" >Choose group types</label>
+					</li>
+                    <li>
+                        <input type="submit" value="Start" name="btnStart" class="form_buttons" id="btnStartLobbyMod"/>
+                    </li>
+					<li>
+						<input type="button" value="Cancel" name="btnHistory" class="form_buttons" onclick="window.location.href = 'http://www.ideosign.co.za/scripts/clear_syncfiles.php?edtClearSyncfilesPassword=123&btnClearSyncfilesSubmit=Submit'" />
+					</li>
+                </ul>
+            </fieldset>
+        </form>
+		</section>
+    </body>
+	<script>
+	var actionString = "/scripts/lobby_admin.php"
+	var numparts = 0;
+	var nummods = 0;
+	var oldnummods = 0;
+	
+	function checkValidation () {
+		if (nummods + numparts > 48){
+			alert('WARNING!\nThe server might not be able to handle such a heavy load. Proceed at own risk.');
+		}
+		if (numparts == 0){
+			alert('At least one participant needs to be logged in.');
+			return false;
+		}else{
+			var remainder = numparts - (nummods * 5);
+			if (remainder > 0){
+				var needed = Math.ceil(remainder / 5);	
+				var string = needed + ' moderators still needed for experiment.';
+				alert(string);
+				return false;
+			}else{
+				if (documnet.getElementById("chkCustomGroups").checked) {
+					actionString += "?1=" + document.getElementById(1).selectedIndex.value
+					for (x = 2; x <= nummods; x++) {
+						actionString += "&" + x + "=" + document.getElementById(x).selectedIndex.value
+					}
+				}
+				return true;
+			}
+		}
+		
+	}
+	
+	var url = '';
+	var aliastokick = "";
+	var lock = false;
+	var xhttp = new XMLHttpRequest();
+	formObject = document.forms['lobby_main_moderator'];
+	setInterval(function () {
+		if (!lock)
+		{
+			lock = true;
+			if (aliastokick !== "")
+				url = `/scripts/eventchange_sessions.php?kickalias=${aliastokick}`;
+			else
+				url = '/scripts/eventchange_sessions.php';
+			xhttp.open("GET", url, true);
+			xhttp.send();
+		}
+    }, 1000);
+	xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                if (this.responseText != null && this.responseText != "") {
+					var found = false;
+                    var arrcounters = this.responseText.split(",");
+                    formObject.elements["counter_mods"].value = arrcounters[0];
+					nummods = parseInt(arrcounters[0], 10);
+                    formObject.elements["counter_parts"].value = arrcounters[1];
+					numparts = parseInt(arrcounters[1], 10);
+					for (i = 2; i < arrcounters.length; i++){
+						if (arrcounters[i] == aliastokick){
+							found = true;
+						}
+						if (document.getElementById(arrcounters[i]) == null){
+							if (arrcounters[i].match(/mod[0-9]/) == null || arrcounters[i].match(/mod[0-9]/) == null){
+								if (arrcounters[i] != 'mod1'){
+									var newElement = document.createElement('li');
+									document.getElementById('Participants_Submenu').appendChild(newElement);
+									var newElementLink = document.createElement('a');
+									newElementLink.setAttribute('id', arrcounters[i]);
+									newElement.appendChild(newElementLink);
+									newElementLink.innerHTML = arrcounters[i];
+								}
+							}
+						}
+					}
+					if (!found && url.indexOf('?kickalias=') != 0 && aliastokick != ""){
+						var parentelem = document.getElementById(aliastokick);
+						parentelem.parentNode.removeChild(parentelem);
+						aliastokick = "";
+					}
+					if (oldnummods != nummods) {
+						if (document.getElementById("chkCustomGroups").checked) {
+							populate_inner_list(oldnummods);
+						}
+						oldnummods = nummods
+					}
+                }
+				lock = false;
+            }
+        };
+	
+	function removeAccount(e){
+		aliastokick = event.target.id;
+	}
+	
+	function checkEnter (e) {
+		if (e.which == 13 || e.keyCode == 13){
+			event.preventDefault();
+		}
+	}
+	
+	function addremoveGrouping (e) {
+		if (e.checked) {
+			populate_inner_list(1);
+		} else {
+			var parentList = document.getElementById('inner_list_groups');
+			parentList.parentNode.removeChild(parentList);
+		}
+	}
+	
+	function populate_inner_list (start) {
+		if (start < 2) {
+			var ulist = document.createElement('ul');
+			ulist.setAttribute('id', 'inner_list_groups');
+			ulist.setAttribute('class', 'fieldset_elements');
+			document.getElementById('outer_list_groups').appendChild(ulist);
+		} else {
+			var ulist = document.getElementById('inner_list_groups');
+		}
+		
+		for (start; start <= nummods; start++) {
+			var newLi = document.createElement('li');
+			ulist.appendChild(newLi);
+			var newLabel = document.createElement('label');
+			newLabel.setAttribute('for', start);
+			newLi.appendChild(newLabel);
+			newLabel.innerHTML = 'Group ' + start;
+			var newSelect = document.createElement('select');
+			newSelect.setAttribute('id', start);
+			newLi.appendChild(newSelect);
+			newSelect.innerHTML = '<option value = "anonymous_feedback">Nicknames with scoring</option>\n<option value = "anonymous_none">Nicknames without scoring</option>\n<option value = "pseudonyms_feedback">Real names with scoring</option>\n<option value = "pseudonyms_none">Real names without scoring</option>';
+		}
+	}
+	</script>
+</html>

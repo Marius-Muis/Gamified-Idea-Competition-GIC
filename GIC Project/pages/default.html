@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="/styling/styling.css" />
+		<script>
+		var url = window.location.href;
+		if (url.indexOf('?registered=true') != -1){
+			alert('You have successfully made an account. Now, log in with your new credentials.');
+		}else{
+			if (url.indexOf('?reset=true') != -1){
+				alert('Session successfully reset.');
+			}else{
+				if (url.indexOf('?message=') != -1){
+					var urlParams = new URLSearchParams(window.location.search);
+					var message = urlParams.get('message');
+					alert(message);
+				}
+			}
+		}
+		</script>
+    </head>
+    <body>
+        <form action="/scripts/login.php" name="login_form" method="POST">
+            <fieldset id="main_login">
+                <legend>Enter your credentials:</legend>
+                <ul class="fieldset_elements">
+                    <li id="password_match">
+                        <label class="main_login_labels" for="edtAlias">Alias:</label>
+                        <input id="AliasEdit" type="text" name="edtAlias" value="" autofocus required />
+                    </li>
+                    <li>
+                        <label class="main_login_labels" for="edtMainPassword">Your password:</label>
+                        <input id="PasswordEdit" type="text" name="edtMainPassword" value="" required />
+                    </li>
+                    <li>
+                        <input type="submit" value="Login" name="btnLoginSubmit" class="form_buttons" />
+                    </li>
+                    <li>
+                        <input type="button" value="Create Account" name="btnCreateAccount" class="form_buttons" onClick="window.location.href = 'http://www.ideosign.co.za/register.html'" />
+                    </li>
+					<li>
+						<input type="button" value="Clear Session (Admin)" name="btnHistory" class="form_buttons" onclick="window.location.href = 'http://www.ideosign.co.za/clear_syncfiles.html'" />
+					</li>
+                </ul>
+            </fieldset>
+        </form>
+        
+    </body>
+</html>
